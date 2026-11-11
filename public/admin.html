@@ -1,0 +1,362 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JESTER.GG | Yönetim Paneli</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0911;color:#eee;font-family:Arial,sans-serif}
+.sidebar{position:fixed;width:230px;height:100vh;background:#100d19;padding:25px 15px;border-right:1px solid #30213f}
+.logo{font-size:25px;font-weight:bold;color:#bd78ff;margin-bottom:35px}
+.nav{display:block;width:100%;padding:14px;margin:7px 0;background:transparent;color:#bbb;border:0;text-align:left;border-radius:8px;cursor:pointer;font-size:15px}
+.nav:hover,.nav.active{background:#281638;color:#d6a5ff}
+main{margin-left:230px;padding:35px;max-width:1200px}
+h1{color:#d6a5ff}
+.page{display:none}
+.page.active{display:block}
+.panel{background:#15111e;border:1px solid #30213f;border-radius:12px;padding:22px;margin:18px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+.stat{background:#21162e;padding:20px;border-radius:10px}
+.stat strong{display:block;font-size:28px;color:#d6a5ff;margin-top:8px}
+input,textarea{width:100%;padding:12px;margin:8px 0 15px;background:#0d0a13;border:1px solid #49305e;border-radius:7px;color:white}
+textarea{min-height:90px;resize:vertical}
+button.action{background:#8d45c2;color:white;border:0;border-radius:7px;padding:10px 15px;cursor:pointer;margin:4px}
+button.danger{background:#9c303e}
+button.secondary{background:#51435f}
+.item{padding:16px;background:#20182b;border-radius:9px;margin:12px 0}
+.item p{color:#bbb;overflow-wrap:anywhere}
+small{color:#aaa}
+@media(max-width:700px){.sidebar{position:relative;width:100%;height:auto}.nav{display:inline-block;width:auto}main{margin:0;padding:18px}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<div class="logo">JESTER.GG</div>
+<button class="nav active" data-page="overview">Genel Bakış</button>
+<button class="nav" data-page="applications">Yetkili Başvuruları</button>
+<button class="nav" data-page="bots">Bot Yönetimi</button>
+<button class="nav" data-page="settings">Site Yönetimi</button>
+</aside>
+
+<main>
+<section id="overview" class="page active">
+<h1>Genel Bakış</h1>
+<p>Jester yönetim paneline hoş geldin.</p>
+<div class="stats">
+<div class="stat">Toplam Başvuru<strong id="total">0</strong></div>
+<div class="stat">Bekleyen<strong id="pending">0</strong></div>
+<div class="stat">Kabul Edilen<strong id="accepted">0</strong></div>
+<div class="stat">Reddedilen<strong id="rejected">0</strong></div>
+</div>
+<div class="panel">
+<h3>Sistem Bilgisi</h3>
+<p>Yönetim paneli aktif.</p>
+<p>Yetkili erişimi: Kurucu rolü</p>
+</div>
+</section>
+
+<section id="applications" class="page">
+<h1>Yetkili Başvuruları</h1>
+<div id="applicationList" class="panel">Başvurular yükleniyor...</div>
+</section>
+
+<section id="bots" class="page">
+<h1>Bot Yönetimi</h1>
+<div class="panel">
+<h3>Yeni Bot Ekle</h3>
+<label>Bot Adı</label>
+<input id="botName" placeholder="Örn: Jester Partner">
+<label>Bot Logosu</label>
+<input type="file" id="botLogo" accept="image/png,image/jpeg,image/webp">
+<label>Bot Açıklaması</label>
+<textarea id="botDescription" placeholder="Botun özelliklerini yaz..."></textarea>
+<label>Davet Bağlantısı</label>
+<input id="botInvite" placeholder="https://discord.com/oauth2/authorize?...">
+<button class="action" onclick="addBot()">Bot Ekle</button>
+</div>
+<div class="panel">
+<h3>Kayıtlı Botlar</h3>
+<div id="botList">Botlar yükleniyor...</div>
+</div>
+</section>
+
+<section id="settings" class="page">
+<h1>Site Yönetimi</h1>
+
+<div class="panel">
+<h3>Site Başlığı</h3>
+<input id="settingTitle" placeholder="JESTER.GG">
+
+<h3>Hakkımızda Yazısı</h3>
+<textarea id="settingAbout" placeholder="Topluluğumuzu tanıt..."></textarea>
+
+<h3>Discord Davet Bağlantısı</h3>
+<input id="settingInvite" placeholder="https://discord.gg/...">
+
+<h3>Botlar Bölümü Açıklaması</h3>
+<textarea id="settingBots" placeholder="Botlarımızı tanıt..."></textarea>
+
+<h3>Ana Sayfa Duyurusu</h3>
+<textarea id="settingAnnouncement" placeholder="Duyuru yaz..."></textarea>
+
+<button class="action" onclick="saveSettings()">Değişiklikleri Kaydet</button>
+<p id="settingsMessage"></p>
+</div>
+</section>
+</main>
+
+<script>
+function showPage(page){
+const target=document.getElementById(page);
+if(!target)return;
+
+document.querySelectorAll(".nav").forEach(b=>{
+b.classList.toggle("active",b.dataset.page===page);
+});
+
+document.querySelectorAll(".page").forEach(p=>{
+p.classList.toggle("active",p.id===page);
+});
+
+localStorage.setItem("jesterAdminPage",page);
+
+if(page==="applications")loadApplications();
+if(page==="bots")loadBots();
+}
+
+document.querySelectorAll(".nav").forEach(button=>{
+button.addEventListener("click",()=>{
+showPage(button.dataset.page);
+});
+});
+
+const savedPage=localStorage.getItem("jesterAdminPage")||"overview";
+showPage(savedPage);
+
+async function api(url,options={}){
+const response=await fetch(url,{
+...options,
+headers:{"Content-Type":"application/json",...(options.headers||{})}
+});
+const data=await response.json().catch(()=>({}));
+if(!response.ok)throw new Error(data.error||"İşlem başarısız.");
+return data;
+}
+async function loadSettings(){
+try{
+const s=await api("/api/settings");
+
+document.getElementById("settingTitle").value=s.site_title||"";
+document.getElementById("settingAbout").value=s.about_text||"";
+document.getElementById("settingInvite").value=s.discord_invite||"";
+document.getElementById("settingBots").value=s.bots_description||"";
+document.getElementById("settingAnnouncement").value=s.announcement||"";
+
+}catch(e){
+document.getElementById("settingsMessage").textContent=e.message;
+}
+}
+
+async function saveSettings(){
+const settings={
+site_title:document.getElementById("settingTitle").value,
+about_text:document.getElementById("settingAbout").value,
+discord_invite:document.getElementById("settingInvite").value,
+bots_description:document.getElementById("settingBots").value,
+announcement:document.getElementById("settingAnnouncement").value
+};
+
+try{
+await api("/api/admin/settings",{
+method:"PUT",
+body:JSON.stringify(settings)
+});
+document.getElementById("settingsMessage").textContent="Ayarlar başarıyla kaydedildi!";
+}catch(e){
+document.getElementById("settingsMessage").textContent=e.message;
+}
+}
+async function loadApplications(){
+const box=document.getElementById("applicationList");
+box.textContent="Yükleniyor...";
+try{
+const apps=await api("/api/admin/applications");
+document.getElementById("total").textContent=apps.length;
+document.getElementById("pending").textContent=apps.filter(a=>a.status==="Beklemede").length;
+document.getElementById("accepted").textContent=apps.filter(a=>a.status==="Kabul Edildi").length;
+document.getElementById("rejected").textContent=apps.filter(a=>a.status==="Reddedildi").length;
+box.replaceChildren();
+if(!apps.length){box.textContent="Henüz başvuru yok.";return;}
+apps.forEach(app=>{
+const item=document.createElement("div");
+item.className="item";
+const title=document.createElement("h3");
+title.textContent=app.username+" - "+app.status;
+const content=document.createElement("p");
+content.textContent=app.content;
+item.append(title,content);
+["Kabul Edildi","Reddedildi","Beklemede"].forEach(status=>{
+const btn=document.createElement("button");
+btn.className="action "+(status==="Reddedildi"?"danger":"");
+btn.textContent=status;
+btn.onclick=()=>changeStatus(app.id,status);
+item.append(btn);
+});
+box.append(item);
+});
+}catch(e){box.textContent=e.message;}
+}
+
+async function changeStatus(id,status){
+try{
+await api("/api/admin/applications/"+id+"/status",{
+method:"POST",body:JSON.stringify({status})
+});
+await loadApplications();
+}catch(e){alert(e.message);}
+}
+
+async function loadBots(){
+const box=document.getElementById("botList");
+box.textContent="Yükleniyor...";
+try{
+const bots=await api("/api/admin/bots");
+box.replaceChildren();
+if(!bots.length){box.textContent="Henüz bot eklenmemiş.";return;}
+bots.forEach(bot=>{
+const item=document.createElement("div");
+item.className="item";
+const title=document.createElement("h3");
+title.textContent=bot.name;
+const description=document.createElement("p");
+description.textContent=bot.description||"Açıklama yok";
+item.append(title,description);
+if(bot.invite_url){
+const link=document.createElement("a");
+link.href=bot.invite_url;
+link.target="_blank";
+link.rel="noopener noreferrer";
+link.textContent="Davet bağlantısı";
+link.style.color="#c58cff";
+item.append(link);
+}
+const edit=document.createElement("button");
+edit.className="action secondary";
+edit.textContent="Düzenle";
+edit.onclick=()=>editBot(bot);
+const del=document.createElement("button");
+del.className="action danger";
+del.textContent="Sil";
+del.onclick=()=>deleteBot(bot.id);
+item.append(edit,del);
+box.append(item);
+});
+}catch(e){box.textContent=e.message;}
+}
+
+
+async function addBot(){
+  const name = document.getElementById("botName").value.trim();
+  const description = document.getElementById("botDescription").value.trim();
+  const invite_url = document.getElementById("botInvite").value.trim();
+  const logo = document.getElementById("botLogo").files[0];
+
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("description", description);
+  formData.append("invite_url", invite_url);
+
+  if (logo) {
+    formData.append("logo", logo);
+  }
+
+  try {
+    const response = await fetch("/api/admin/bots", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "İşlem başarısız.");
+    }
+
+    alert("Bot eklendi.");
+    document.getElementById("botName").value = "";
+    document.getElementById("botDescription").value = "";
+    document.getElementById("botInvite").value = "";
+    document.getElementById("botLogo").value = "";
+
+    loadBots();
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+async function editBot(bot){
+const name=prompt("Bot adı:",bot.name);
+if(name===null)return;
+const description=prompt("Bot açıklaması:",bot.description||"");
+if(description===null)return;
+const invite_url=prompt("Davet bağlantısı:",bot.invite_url||"");
+if(invite_url===null)return;
+try{
+await api("/api/admin/bots/"+bot.id,{
+method:"PUT",body:JSON.stringify({name,description,invite_url})
+});
+alert("Bot güncellendi.");
+loadBots();
+}catch(e){alert(e.message);}
+}
+
+async function deleteBot(id){
+if(!confirm("Bu botu silmek istediğine emin misin?"))return;
+try{
+await api("/api/admin/bots/"+id,{method:"DELETE"});
+alert("Bot silindi.");
+loadBots();
+}catch(e){alert(e.message);}
+}
+async function loadSettings(){
+try{
+const s=await api("/api/settings");
+
+document.getElementById("settingTitle").value=s.site_title||"";
+document.getElementById("settingAbout").value=s.about_text||"";
+document.getElementById("settingInvite").value=s.discord_invite||"";
+document.getElementById("settingBots").value=s.bots_description||"";
+document.getElementById("settingAnnouncement").value=s.announcement||"";
+
+}catch(e){
+document.getElementById("settingsMessage").textContent=e.message;
+}
+}
+
+async function saveSettings(){
+const settings={
+site_title:document.getElementById("settingTitle").value,
+about_text:document.getElementById("settingAbout").value,
+discord_invite:document.getElementById("settingInvite").value,
+bots_description:document.getElementById("settingBots").value,
+announcement:document.getElementById("settingAnnouncement").value
+};
+
+try{
+await api("/api/admin/settings",{
+method:"PUT",
+body:JSON.stringify(settings)
+});
+document.getElementById("settingsMessage").textContent="Ayarlar başarıyla kaydedildi!";
+}catch(e){
+document.getElementById("settingsMessage").textContent=e.message;
+}
+}
+
+document.querySelector('[data-page="settings"]').addEventListener("click",loadSettings);
+loadApplications();
+</script>
+</body>
+</html>
