@@ -171,7 +171,13 @@ async function founderOnly(req, res, next) {
 
     const member = await getGuildMember(req.session.user.accessToken);
 
-    if (!member || !member.roles?.includes(FOUNDER_ROLE_ID)) {
+if (member?.rateLimited) {
+  return res.status(503).json({
+    error: "Discord geçici olarak istekleri sınırlandırdı. Biraz sonra tekrar dene."
+  });
+}
+
+if (!member || !member.roles?.includes(FOUNDER_ROLE_ID)) {
       return req.session.destroy(() => {
         res.status(403).send(
           "Bu panele yalnızca Kurucu rolüne sahip kişiler girebilir."
