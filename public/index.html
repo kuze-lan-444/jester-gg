@@ -15,8 +15,20 @@ header{height:85px;padding:0 9%;display:flex;align-items:center;justify-content:
 .logo span{color:#ad55f5}
 nav a{color:#aaa;text-decoration:none;margin-left:20px;font-size:13px;transition:.3s}
 nav a:hover{color:#c77cff}
-.hero{min-height:680px;display:flex;align-items:center;padding:80px 10%;position:relative;background:radial-gradient(ellipse at 75% 50%,#4c16702c,transparent 55%),linear-gradient(120deg,#08070b,#100a16)}
-.hero:after{content:"";position:absolute;width:360px;height:360px;right:12%;top:20%;border:1px solid #a855f733;border-radius:50%;box-shadow:0 0 90px #9b4bdf22,inset 0 0 90px #9b4bdf11;pointer-events:none}
+.hero{
+min-height:680px;
+display:flex;
+align-items:center;
+padding:80px 10%;
+position:relative;
+background:
+linear-gradient(90deg,rgba(8,7,11,.94),rgba(8,7,11,.65)),
+url("/smoke.png") center center / 100% 100% no-repeat;
+}
+
+.hero:after{
+display:none;
+}
 .hero-content{max-width:700px;position:relative;z-index:1}
 .tag{color:#b86af3;letter-spacing:6px;font-size:12px;margin-bottom:25px}
 h1{font-size:clamp(52px,8vw,100px);letter-spacing:4px;line-height:1.02}
@@ -53,7 +65,11 @@ nav a{margin-left:8px;font-size:10px}
 .hero:after{right:-120px;opacity:.4}
 section{padding:70px 7%}
 }
-</style>
+
+.welcome-line {
+    white-space: nowrap;
+    color: #fff;
+}</style>
 </head>
 
 <body>
@@ -72,8 +88,7 @@ section{padding:70px 7%}
 
 <div class="hero">
 <div class="hero-content">
-<div class="tag">WELCOME TO JESTER</div>
-<h1>ENTER THE<br><span>UNKNOWN.</span></h1>
+<h1><span class="welcome-line">WELCOME TO</span><br><span>JESTER.</span></h1>
 
 <p>Alışılmışın dışında bir topluluk. Yeni insanlarla tanış, sohbetlere katıl ve Jester dünyasının bir parçası ol.</p>
 
@@ -304,6 +319,48 @@ loadBots();
 checkLogin();
 
 </script>
+<script>
+document.getElementById("applicationForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
 
+  const button = document.getElementById("submitButton");
+  const message = document.getElementById("formMessage");
+  const content = document.getElementById("applicationContent").value.trim();
+
+  if (content.length < 30) {
+    message.textContent = "Başvurun en az 30 karakter olmalı.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "GÖNDERİLİYOR...";
+  message.textContent = "";
+
+  try {
+    const response = await fetch("/api/applications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({ content })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Başvuru gönderilemedi.");
+    }
+
+    message.textContent = "Başvurun başarıyla gönderildi!";
+    document.getElementById("applicationContent").value = "";
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "BAŞVURUYU GÖNDER";
+  }
+});
+</script>
 </body>
 </html>

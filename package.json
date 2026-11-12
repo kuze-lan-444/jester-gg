@@ -17,6 +17,7 @@
     "express-session": "^1.19.0",
     "multer": "^2.5.0",
     "passport": "^0.7.0",
-    "passport-discord": "^0.1.4"
+    "passport-discord": "^0.1.4",
+    "pg": "^8.23.1"
   }
 }

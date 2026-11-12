@@ -3,4 +3,5 @@ node_modules/
 *.db
 *.sqlite
 *.sqlite3
-public/uploads/
+public/uploads/migrate.js
+server-eski.js
